@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>GateKeeper AI</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@500;700&family=Figtree:wght@400;500;600&display=swap">
+<style>
+:root{--bg:#eef1f4;--panel:#fff;--ink:#16212b;--mute:#5d6b78;--line:#d5dbe1;--blue:#2f6fed;--green:#12915a;--red:#d63a3a;--zone:#e08a00;--stage:#1b2a36;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media(prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0e161d;--panel:#16222c;--ink:#e6edf3;--mute:#8d9eae;--line:#27374459;--blue:#6b9bff;--green:#35c98a;--red:#ff6b6b;--zone:#ffb02e;--stage:#0a1218}}
+:root[data-theme="dark"]{--bg:#0e161d;--panel:#16222c;--ink:#e6edf3;--mute:#8d9eae;--line:#2a3b49;--blue:#6b9bff;--green:#35c98a;--red:#ff6b6b;--zone:#ffb02e;--stage:#0a1218}
+*{box-sizing:border-box}html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--bg);color:var(--ink);font:400 15px/1.5 Figtree,system-ui,sans-serif}
+h1,h2{font-family:"Bricolage Grotesque",Georgia,serif;margin:0}
+.wrap{max-width:1080px;margin:0 auto;padding:20px 16px 40px}
+header{display:flex;justify-content:space-between;align-items:flex-end;gap:16px;flex-wrap:wrap;margin-bottom:18px}
+h1{font-size:clamp(28px,5vw,40px);letter-spacing:-.02em}
+header p{margin:4px 0 0;color:var(--mute);max-width:56ch}
+.status{display:flex;gap:8px;align-items:center;font-size:13px;color:var(--mute)}
+.dot{width:9px;height:9px;border-radius:50%;background:var(--mute)}.live .dot{background:var(--red);box-shadow:0 0 0 4px #d63a3a33}
+nav{display:flex;gap:6px;margin-bottom:14px;overflow-x:auto}
+nav button{flex:1;min-width:140px;text-align:left;padding:10px 14px;border:1px solid var(--line);background:var(--panel);color:var(--mute);border-radius:10px;font:inherit;cursor:pointer}
+nav button b{display:block;color:var(--ink);font-weight:600}
+nav button[aria-selected=true]{border-color:var(--ink);color:var(--ink)}
+.grid{display:grid;grid-template-columns:minmax(0,1.7fr) minmax(0,1fr);gap:14px}
+@media(max-width:820px){.grid{grid-template-columns:1fr}}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:16px}
+.stagewrap{padding:0;overflow:hidden;background:var(--stage)}
+canvas{display:block;width:100%;height:auto;touch-action:none}
+.bar{display:flex;gap:8px;flex-wrap:wrap;padding:10px 12px;background:var(--panel);border-top:1px solid var(--line);align-items:center;font-size:13px;color:var(--mute)}
+button.b,input{font:inherit;border-radius:8px;border:1px solid var(--line);padding:8px 12px;background:var(--panel);color:var(--ink)}
+button.b{cursor:pointer;font-weight:500}button.b.p{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+button:focus-visible,input:focus-visible,nav button:focus-visible{outline:3px solid var(--blue);outline-offset:2px}
+h2{font-size:19px;margin-bottom:6px}.mute{color:var(--mute);font-size:14px;margin:0 0 12px}
+.panel{display:none}.panel.on{display:block}
+.row{display:flex;gap:8px;margin-bottom:12px}.row input{flex:1;min-width:0}
+ul{list-style:none;margin:0;padding:0}
+.person{display:flex;gap:10px;align-items:center;padding:8px 0;border-top:1px solid var(--line)}
+.av{width:36px;height:36px;border-radius:50%;background:var(--green);color:#fff;display:grid;place-items:center;font-weight:600;overflow:hidden}
+.av img{width:100%;height:100%;object-fit:cover}
+.person span{flex:1}.person button{border:0;background:none;color:var(--mute);cursor:pointer;font:inherit}
+.legend{display:grid;gap:6px;font-size:14px;margin-bottom:12px}
+.legend i{display:inline-block;width:12px;height:12px;border-radius:3px;margin-right:8px;vertical-align:-1px}
+#log{max-height:200px;overflow:auto;font-size:13px}
+#log li{padding:6px 0;border-top:1px solid var(--line);display:flex;gap:8px}
+#log time{color:var(--mute);flex:none}.alert{color:var(--red)}.ok{color:var(--green)}
+.note{font-size:13px;color:var(--mute);margin-top:12px;border-left:3px solid var(--zone);padding-left:10px}
+.pipe{display:flex;flex-wrap:wrap;gap:6px;font-size:12px;margin-bottom:12px}
+.pipe span{padding:3px 8px;border:1px solid var(--line);border-radius:6px;color:var(--mute)}
+.pipe span.hot{border-color:var(--ink);color:var(--ink)}
+@media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header>
+ <div><h1>GateKeeper AI</h1><p>Draw a restricted zone, enroll the people allowed inside, and watch for anyone who crosses the line.</p></div>
+ <div class="status" id="status"><span class="dot"></span><span id="stxt">Monitoring off</span></div>
+</header>
+<nav role="tablist">
+ <button role="tab" aria-selected="true" data-t="enroll"><b>1. Enroll faces</b>Add authorized people</button>
+ <button role="tab" aria-selected="false" data-t="zone"><b>2. Draw zone</b>Mark the restricted area</button>
+ <button role="tab" aria-selected="false" data-t="monitor"><b>3. Live monitor</b>Watch the feed</button>
+</nav>
+<div class="grid">
+ <div class="card stagewrap">
+  <canvas id="cv" width="800" height="480" aria-label="Camera view with restricted zone"></canvas>
+  <div class="bar" id="bar"><span id="hint">Camera view (demo scene)</span></div>
+ </div>
+ <div>
+  <section class="card panel on" id="p-enroll">
+   <h2>Enroll faces</h2><p class="mute">Enter a name, then capture from your webcam. If no camera is available, a placeholder is saved.</p>
+   <div class="row"><input id="nm" placeholder="Name or ID" aria-label="Name or ID"><button class="b p" id="cap">Capture</button></div>
+   <video id="vid" playsinline muted hidden style="width:100%;border-radius:8px;margin-bottom:10px"></video>
+   <ul id="plist"></ul><p class="mute alert" id="emsg" role="alert"></p>
+   <p class="mute" id="pempty">No one enrolled yet. Everyone in the zone will be flagged as unknown.</p>
+  </section>
+  <section class="card panel" id="p-zone">
+   <h2>Draw zone</h2><p class="mute">Click the camera view to place corners. You need at least 3.</p>
+   <div style="display:flex;gap:8px;flex-wrap:wrap"><button class="b" id="undo">Undo corner</button><button class="b" id="clr">Clear zone</button><button class="b" id="preset">Use sample zone</button></div>
+   <p class="note" id="zinfo">0 corners placed.</p>
+  </section>
+  <section class="card panel" id="p-monitor">
+   <h2>Live monitor</h2>
+   <div class="legend"><div><i style="background:var(--blue)"></i>Outside the zone</div><div><i style="background:var(--green)"></i>Authorized, inside the zone</div><div><i style="background:var(--red)"></i>Unknown, inside the zone</div></div>
+   <button class="b p" id="go">Start monitoring</button>
+   <div class="pipe" style="margin-top:12px"><span class="hot">YOLOv8 person</span><span id="s2">Foot-point check</span><span id="s3">YuNet + SFace</span></div>
+   <ul id="log"><li class="mute">Events appear here.</li></ul>
+  </section>
+ </div>
+</div>
+<p class="note" id="note" style="margin-top:16px">Backend not found, so this is a preview with simulated people. Run <code>python server.py</code> and open <code>http://localhost:8000</code> to use real detection.</p>
+</div>
+<script>
+const $=s=>document.querySelector(s),cv=$('#cv'),ctx=cv.getContext('2d');
+const css=n=>getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+let tab='enroll',zone=[],people=[],enrolled=[],running=false,t0=0,stream=null,api=false,dets=[],busy=false,lastSend=0,live=false,camS=null,seen=new Set(),unk=0;
+const W=cv.width,H=cv.height;
+function inPoly(p,z){let c=false;for(let i=0,j=z.length-1;i<z.length;j=i++){const a=z[i],b=z[j];if((a[1]>p[1])!=(b[1]>p[1])&&p[0]<(b[0]-a[0])*(p[1]-a[1])/(b[1]-a[1])+a[0])c=!c}return c}
+function ts(){return new Date().toLocaleTimeString([], {hour:'2-digit',minute:'2-digit',second:'2-digit'})}
+function log(msg,cls){const l=$('#log');if(l.firstElementChild&&l.firstElementChild.classList.contains('mute'))l.innerHTML='';const li=document.createElement('li');li.innerHTML=`<time>${ts()}</time><span class="${cls||''}"></span>`;li.lastChild.textContent=msg;l.prepend(li)}
+function setTab(t){tab=t;document.querySelectorAll('nav button').forEach(b=>b.setAttribute('aria-selected',b.dataset.t===t));document.querySelectorAll('.panel').forEach(p=>p.classList.toggle('on',p.id==='p-'+t));$('#hint').textContent={enroll:'Camera view (demo scene)',zone:zone.length?'Click to add another corner':'Click to place the first corner',monitor:zone.length>2?'Press Start monitoring':'Draw a zone first'}[t];cv.style.cursor=t==='zone'?'crosshair':'default';draw()}
+document.querySelectorAll('nav button').forEach(b=>b.onclick=()=>setTab(b.dataset.t));
+cv.addEventListener('pointerdown',e=>{if(tab!=='zone')return;const r=cv.getBoundingClientRect();zone.push([(e.clientX-r.left)*W/r.width,(e.clientY-r.top)*H/r.height]);zinfo();draw()});
+function zinfo(){$('#zinfo').textContent=zone.length<3?`${zone.length} corner${zone.length==1?'':'s'} placed. Add ${3-zone.length} more to close the zone.`:`Zone ready with ${zone.length} corners. Open Live monitor to test it.`}
+$('#undo').onclick=()=>{zone.pop();zinfo();draw()};$('#clr').onclick=()=>{zone=[];zinfo();draw()};
+$('#preset').onclick=()=>{zone=[[470,230],[760,230],[760,450],[430,450]];zinfo();draw()};
+function renderPeople(){const u=$('#plist');u.innerHTML='';enrolled.forEach((p,i)=>{const li=document.createElement('li');li.className='person';const av=document.createElement('div');av.className='av';if(p.img){const im=new Image();im.src=p.img;im.alt='';av.append(im)}else av.textContent=p.name[0].toUpperCase();const s=document.createElement('span');s.textContent=p.name;const b=document.createElement('button');b.textContent='Remove';b.onclick=()=>{if(api)fetch('/api/people/'+encodeURIComponent(p.name),{method:'DELETE'});enrolled.splice(i,1);renderPeople()};li.append(av,s,b);u.append(li)});$('#pempty').hidden=enrolled.length>0}
+$('#cap').onclick=async()=>{const name=$('#nm').value.trim();if(!name){$('#nm').focus();return}
+ const v=$('#vid');$('#emsg').textContent='';
+ try{if(!stream){stream=await navigator.mediaDevices.getUserMedia({video:true});v.srcObject=stream;v.hidden=false;await v.play();$('#cap').textContent='Capture now';return}}
+ catch(err){stream=null;v.hidden=true;$('#cap').textContent='Capture';if(api){$('#emsg').textContent='Allow camera access to enroll a face.';return}}
+ let img=null,full=null;
+ if(stream){const c=document.createElement('canvas');c.width=96;c.height=96;const q=Math.min(v.videoWidth,v.videoHeight);c.getContext('2d').drawImage(v,(v.videoWidth-q)/2,(v.videoHeight-q)/2,q,q,0,0,96,96);img=c.toDataURL('image/jpeg',.7);
+  const f=document.createElement('canvas');f.width=v.videoWidth;f.height=v.videoHeight;f.getContext('2d').drawImage(v,0,0);full=f.toDataURL('image/jpeg',.9);
+  stream.getTracks().forEach(t=>t.stop());stream=null;v.hidden=true;$('#cap').textContent='Capture'}
+ if(api){try{const r=await fetch('/api/enroll',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name,image:full})});const j=await r.json();if(!r.ok){$('#emsg').textContent=j.detail||'Enrollment failed.';return}}catch(e){$('#emsg').textContent='Could not reach the server. Check that server.py is running.';return}}
+ enrolled=enrolled.filter(p=>p.name!==name);enrolled.push({name,img});$('#nm').value='';renderPeople()};
+function spawn(){const names=enrolled.map(e=>e.name);const n=Math.max(4,names.length+2);people=[];for(let i=0;i<n;i++){people.push({x:60+Math.random()*680,y:200+Math.random()*250,vx:(Math.random()-.5)*1.4,vy:(Math.random()-.5)*1.1,name:names[i]||null,was:false})}}
+$('#go').onclick=async()=>{if(running){stop();return}
+ if(zone.length<3){log('Draw a zone with at least 3 corners first.','alert');return}
+ live=false;dets=[];seen=new Set();unk=0;
+ if(api){try{camS=await navigator.mediaDevices.getUserMedia({video:true});camV.srcObject=camS;await camV.play();live=true}catch(e){log('Camera unavailable. Showing the demo scene instead.','alert')}}
+ if(!live)spawn();
+ running=true;$('#go').textContent='Stop monitoring';$('#status').classList.add('live');$('#stxt').textContent=live?'Monitoring live camera':'Monitoring demo scene';log('Monitoring started.');requestAnimationFrame(loop)};
+const camV=document.createElement('video');camV.muted=true;camV.playsInline=true;
+const fc=document.createElement('canvas');fc.width=W;fc.height=H;const fx=fc.getContext('2d');
+function liveStep(){const vw=camV.videoWidth,vh=camV.videoHeight;if(!vw)return;const q=Math.max(W/vw,H/vh),dw=vw*q,dh=vh*q;fx.drawImage(camV,(W-dw)/2,(H-dh)/2,dw,dh);
+ const now=performance.now();if(!busy&&now-lastSend>250){busy=true;lastSend=now;
+  fetch('/api/analyze',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({image:fc.toDataURL('image/jpeg',.7),zone})}).then(r=>r.json()).then(j=>{if(running&&j.detections){dets=j.detections;events()}}).catch(()=>{if(running)log('Lost connection to the server.','alert')}).finally(()=>busy=false)}}
+function events(){const ins=dets.filter(d=>d.inside);const names=new Set(ins.filter(d=>d.name).map(d=>d.name));names.forEach(n=>{if(!seen.has(n))log(n+' entered the zone. Access granted.','ok')});const u=ins.filter(d=>!d.name).length;if(u>unk)log('Unknown person entered the zone.','alert');seen=names;unk=u}
+function dbox(d){const [x1,y1,x2,y2]=d.box;const col=!d.inside?css('--blue'):d.name?css('--green'):css('--red');ctx.fillStyle=col+'26';ctx.fillRect(x1,y1,x2-x1,y2-y1);ctx.strokeStyle=col;ctx.lineWidth=2;ctx.strokeRect(x1,y1,x2-x1,y2-y1);ctx.fillStyle=col;ctx.beginPath();ctx.arc((x1+x2)/2,y2,4,0,7);ctx.fill();
+ const label=!d.inside?'Person':d.name?d.name+' '+d.score.toFixed(2):'Unknown';ctx.font='600 13px Figtree,sans-serif';const tw=ctx.measureText(label).width+12;ctx.fillStyle=col;ctx.fillRect(x1,Math.max(y1-20,0),tw,20);ctx.fillStyle='#fff';ctx.fillText(label,x1+6,Math.max(y1-6,14))}
+function stop(){running=false;if(camS){camS.getTracks().forEach(t=>t.stop());camS=null}live=false;dets=[];$('#go').textContent='Start monitoring';$('#status').classList.remove('live');$('#stxt').textContent='Monitoring off';log('Monitoring stopped.');draw()}
+function loop(){if(!running)return;if(live){liveStep();draw();requestAnimationFrame(loop);return}people.forEach(p=>{p.x+=p.vx;p.y+=p.vy;if(p.x<30||p.x>W-30)p.vx*=-1;if(p.y<190||p.y>H-10)p.vy*=-1;if(Math.random()<.01){p.vx=(Math.random()-.5)*1.6;p.vy=(Math.random()-.5)*1.2}
+ const inside=inPoly([p.x,p.y],zone);if(inside&&!p.was){p.was=true;$('#s2').classList.add('hot');$('#s3').classList.add('hot');setTimeout(()=>{$('#s2').classList.remove('hot');$('#s3').classList.remove('hot')},700);
+  if(p.name)log(p.name+' entered the zone. Access granted.','ok');else log('Unknown person entered the zone.','alert')}
+ if(!inside)p.was=false});draw();requestAnimationFrame(loop)}
+function box(p){const h=84,w=38;const inside=inPoly([p.x,p.y],zone);const col=!inside?css('--blue'):p.name?css('--green'):css('--red');
+ ctx.fillStyle=col+'33';ctx.fillRect(p.x-w/2,p.y-h,w,h);ctx.strokeStyle=col;ctx.lineWidth=2;ctx.strokeRect(p.x-w/2,p.y-h,w,h);
+ ctx.fillStyle='#cfd8df';ctx.beginPath();ctx.arc(p.x,p.y-h+14,9,0,7);ctx.fill();ctx.fillRect(p.x-9,p.y-h+25,18,38);
+ ctx.fillStyle=col;ctx.beginPath();ctx.arc(p.x,p.y,4,0,7);ctx.fill();
+ const label=!inside?'Person':p.name?p.name+' 0.82':'Unknown';ctx.font='600 13px Figtree,sans-serif';const tw=ctx.measureText(label).width+12;
+ ctx.fillStyle=col;ctx.fillRect(p.x-w/2,p.y-h-20,tw,20);ctx.fillStyle='#fff';ctx.fillText(label,p.x-w/2+6,p.y-h-6)}
+function draw(){ctx.fillStyle=css('--stage');ctx.fillRect(0,0,W,H);ctx.strokeStyle='#ffffff14';ctx.lineWidth=1;
+ for(let x=0;x<W;x+=40){ctx.beginPath();ctx.moveTo(x,170);ctx.lineTo(x,H);ctx.stroke()}for(let y=170;y<H;y+=40){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(W,y);ctx.stroke()}
+ ctx.fillStyle='#ffffff10';ctx.fillRect(0,0,W,170);if(live&&camV.videoWidth)ctx.drawImage(fc,0,0);
+ const zc=css('--zone');if(zone.length){ctx.beginPath();zone.forEach((q,i)=>i?ctx.lineTo(q[0],q[1]):ctx.moveTo(q[0],q[1]));if(zone.length>2){ctx.closePath();ctx.fillStyle=zc+'30';ctx.fill()}ctx.setLineDash([8,6]);ctx.strokeStyle=zc;ctx.lineWidth=2.5;ctx.stroke();ctx.setLineDash([]);zone.forEach(q=>{ctx.fillStyle=zc;ctx.beginPath();ctx.arc(q[0],q[1],6,0,7);ctx.fill()})}
+ else if(tab!=='enroll'){ctx.fillStyle='#ffffffaa';ctx.font='500 16px Figtree,sans-serif';ctx.textAlign='center';ctx.fillText(tab==='zone'?'Click here to place the first corner of the zone':'No zone yet. Draw one in step 2.',W/2,H/2);ctx.textAlign='left'}
+ if(running){if(live)dets.forEach(dbox);else [...people].sort((a,b)=>a.y-b.y).forEach(box)}
+ ctx.fillStyle='#ffffffcc';ctx.font='500 12px Figtree,sans-serif';ctx.fillText(live?'LIVE CAMERA':'DEMO SCENE',14,22)}
+document.fonts&&document.fonts.ready.then(draw);
+renderPeople();zinfo();draw();
+fetch('/api/health').then(r=>r.json()).then(()=>{api=true;$('#stxt').textContent='Backend connected';$('#note').textContent='Connected to the GateKeeper backend. Enrollment and monitoring use your camera with the YOLOv8, YuNet and SFace models.';return fetch('/api/people')}).then(r=>r.json()).then(j=>{enrolled=j.people.map(n=>({name:n,img:null}));renderPeople()}).catch(()=>{});
+matchMedia('(prefers-color-scheme:dark)').addEventListener('change',draw);
+</script>
+</body>
+</html>
