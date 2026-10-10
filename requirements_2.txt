@@ -1,7 +1,0 @@
-streamlit>=1.30.0
-ultralytics>=8.1.0
-numpy<2.0.0
-opencv-python<5.0.0.0
-setuptools<81.0.0
-fastapi
-uvicorn

@@ -1,7 +1,8 @@
-streamlit
-opencv-python-headless
-numpy
-Pillow
-face_recognition
-ultralytics
-streamlit-drawable-canvas
+# GateKeeper AI - web app (server.py + index.html)
+# Tested with Python 3.11. Lower bounds only; run `pip freeze > requirements.lock.txt`
+# on a working machine if you want exact versions.
+fastapi>=0.110
+uvicorn[standard]>=0.29
+ultralytics>=8.2
+opencv-python>=4.9
+numpy>=1.26
